@@ -2,12 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-odt_ground_5 = np.load('joseph_ground_true.npy')
-odt_stnb_5 = np.load('joseph_stnb.npy')
-idx_stops = np.load('joseph_select_area.npy')
-non_zero_idx = np.load('joseph_flatten_index.npy')
-
-
 def increase_interval_size(odt, prev_interval_min=5, new_interval_min=30):
     ratio_interval = int(new_interval_min/prev_interval_min)
     od_pair_len = odt.shape[1]
@@ -68,13 +62,19 @@ def bar_chart_comparison(obs, pred, fname, x_y_lbls):
     return
 
 
+odt_ground_5 = np.load('joseph_ground_true.npy')
+odt_stnb_5 = np.load('joseph_stnb.npy')
+stop_ids = np.load('joseph_select_area.npy')
+non_zero_idx = np.load('joseph_flatten_index.npy')
+
+
 odt_ground_day = increase_interval_size(odt_ground_5, prev_interval_min=5, new_interval_min=60*24)
 odt_stnb_day = increase_interval_size(odt_stnb_5, prev_interval_min=5, new_interval_min=60*24)
 
 tot_board_ground_day = odt_ground_day.sum(axis=-1)
 tot_board_stnb_day = odt_stnb_day.sum(axis=-1)
-bar_chart_comparison(tot_board_ground_day, tot_board_stnb_day, 'daily_demand.png',
-                     ['day of month', 'tot pax'])
+# bar_chart_comparison(tot_board_ground_day, tot_board_stnb_day, 'daily_demand.png',
+#                      ['day of month', 'tot pax'])
 
 
 odt_ground_5_weekday = extract_weekday_odt(odt_ground_5, 5) # single day intervals (averaged over all weekdays)
@@ -85,10 +85,30 @@ odt_stnb_60_weekday = increase_interval_size(odt_stnb_5_weekday, prev_interval_m
 
 ground_boards_per_inter = interval_average(odt_ground_60_weekday, interval_min=60)
 stnb_boards_per_inter = interval_average(odt_stnb_60_weekday, interval_min=60)
-bar_chart_comparison(ground_boards_per_inter, stnb_boards_per_inter, 'hourly_demand_weekday.png',
-                     ['hour of day', 'tot pax'])
+# bar_chart_comparison(ground_boards_per_inter, stnb_boards_per_inter, 'hourly_demand_weekday.png',
+#                      ['hour of day', 'tot pax'])
 
-odt_ground_30_weekday = increase_interval_size(odt_ground_5_weekday, prev_interval_min=5, new_interval_min=30)
-odt_stnb_30_weekday = increase_interval_size(odt_stnb_5_weekday, prev_interval_min=5, new_interval_min=30)
+nz_odt_ground_30_wkday = increase_interval_size(odt_ground_5_weekday, prev_interval_min=5, new_interval_min=30)
+nz_odt_stnb_30_wkday = increase_interval_size(odt_stnb_5_weekday, prev_interval_min=5, new_interval_min=30)
 
+nr_stops = stop_ids.shape[0]
+odt_rates_true_30_wkday = np.zeros(shape=(nz_odt_ground_30_wkday.shape[0], nr_stops*nr_stops))
+odt_rates_true_30_wkday[:, non_zero_idx] = nz_odt_ground_30_wkday*2
+odt_rates_true_30_wkday = np.reshape(odt_rates_true_30_wkday, (odt_rates_true_30_wkday.shape[0], nr_stops, nr_stops))
+
+odt_rates_stnb_30_wkday = np.zeros(shape=(nz_odt_stnb_30_wkday.shape[0], nr_stops*nr_stops))
+odt_rates_stnb_30_wkday[:, non_zero_idx] = nz_odt_stnb_30_wkday*2
+odt_rates_stnb_30_wkday = np.reshape(odt_rates_stnb_30_wkday, (odt_rates_stnb_30_wkday.shape[0], nr_stops, nr_stops))
+
+np.save('rt_20_odt_rates_30.npy', odt_rates_stnb_30_wkday)
+np.save('rt_20_demand_stops.npy', stop_ids)
+
+# plt.imshow(odt_ground_30_wkday[6*2], cmap='Greys')
+# plt.colorbar()
+# plt.show()
+# plt.close()
+# plt.imshow(odt_ground_30_wkday[14*2], cmap='Greys')
+# plt.colorbar()
+# plt.show()
+# plt.close()
 
